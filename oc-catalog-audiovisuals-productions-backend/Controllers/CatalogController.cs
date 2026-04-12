@@ -26,6 +26,7 @@ namespace oc_catalog_audiovisuals_productions_backend.Controllers
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now,
                 Name = productionDto.Name,
+                AlternativeName = productionDto.AlternativeName,
                 Description = productionDto.Description,
                 ReleasedYear = productionDto.ReleasedYear,
                 ProductionsGenres = productionDto.GenresIds.Select(genreId => new ProductionGenreModel
@@ -81,45 +82,45 @@ namespace oc_catalog_audiovisuals_productions_backend.Controllers
         [HttpGet("id/{id}")]
         public IActionResult GetProductionById(int id)
         {
-            ProductionModel foundProdutction = _catalogContext.Productions.Find(id);
+            var foundProduction = _catalogContext.Productions.FirstOrDefault(x => x.Id == id);
 
-            if(foundProdutction == null)
+            if(foundProduction == null)
                 return NotFound();
 
-            return Ok(foundProdutction);
+            return Ok(foundProduction);
         }
 
         [HttpGet("name/{name}")]
         public IActionResult GetProductionByName(string name)
         {
-            var foundProdutctions = _catalogContext.Productions.Where(x => x.Name.Contains(name));
+            var foundProductions = _catalogContext.Productions.Where(x => x.Name.Contains(name));
 
-            if (foundProdutctions == null)
+            if (foundProductions == null)
                 return NotFound();
 
-            return Ok(foundProdutctions);
+            return Ok(foundProductions);
         }
 
         [HttpGet("year/{year}")]
         public IActionResult GetProductionByYear(int year)
         {
-            var foundProdutctions = _catalogContext.Productions.Where(x => x.ReleasedYear == year);
+            var foundProductions = _catalogContext.Productions.Where(x => x.ReleasedYear == year);
 
-            if (foundProdutctions == null)
+            if (foundProductions == null)
                 return NotFound();
 
-            return Ok(foundProdutctions);
+            return Ok(foundProductions);
         }
 
         [HttpGet("genre/{genre}")]
         public IActionResult GetProductionByGenre(string genre)
         {
-            //var foundProdutction = _catalogContext.Productions.Where(x => x.Genre.ToString() == genre);
+            //var foundProduction = _catalogContext.Productions.Where(x => x.Genre.ToString() == genre);
 
-            //if (foundProdutction == null)
+            //if (foundProduction == null)
             //    return NotFound();
 
-            //return Ok(foundProdutction);
+            //return Ok(foundProduction);
             return null;
         }
     }

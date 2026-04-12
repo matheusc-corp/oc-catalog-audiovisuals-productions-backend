@@ -6,7 +6,7 @@
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
         public string Name { get; set; }
-        public string AlternativeName { get; set; }
+        public string? AlternativeName { get; set; }
         public string Description { get; set; }
         public ICollection<ProductionGenreModel> ProductionsGenres { get; set; }
         public int ReleasedYear { get; set; }

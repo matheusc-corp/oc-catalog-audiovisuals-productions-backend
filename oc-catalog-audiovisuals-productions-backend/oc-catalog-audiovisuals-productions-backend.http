@@ -1,0 +1,6 @@
+@oc_catalog_audiovisuals_productions_backend_HostAddress = http://localhost:5203
+
+GET {{oc_catalog_audiovisuals_productions_backend_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

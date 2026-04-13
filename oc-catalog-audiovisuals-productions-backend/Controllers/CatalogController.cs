@@ -87,7 +87,20 @@ namespace oc_catalog_audiovisuals_productions_backend.Controllers
             if(foundProduction == null)
                 return NotFound();
 
-            return Ok(foundProduction);
+            var genres = _catalogContext.ProductionsGenres.Where(p => p.ProductionId == foundProduction.Id).ToList();
+            
+            ProductionResponseDto response = new ProductionResponseDto
+            {
+                Id = foundProduction.Id,
+                Name = foundProduction.Name,
+                AlternativeName = foundProduction.AlternativeName,
+                Description = foundProduction.Description,
+                ReleasedYear = foundProduction.ReleasedYear,
+                GenresIds = genres.Select(g => g.GenreId).ToList()
+
+            };
+
+            return Ok(response);
         }
 
         [HttpGet("name/{name}")]

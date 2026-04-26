@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using oc_catalog_audiovisuals_productions_backend.Context;
 using oc_catalog_audiovisuals_productions_backend.DTOs;
 using oc_catalog_audiovisuals_productions_backend.Models;
@@ -38,33 +39,9 @@ namespace oc_catalog_audiovisuals_productions_backend.Controllers
             _catalogContext.Productions.Add(production);
             _catalogContext.SaveChanges();
 
-            var response = new ProductionResponseDto
-            {
-                Id = production.Id,
-                Name = production.Name,
-                AlternativeName = production.AlternativeName,
-                Description = production.Description,
-                ReleasedYear = production.ReleasedYear,
-                GenresIds = production.ProductionsGenres.Select(p => p.GenreId).ToList()
-
-            };
+            var response = ConvertoToProductionResponse(production, production.ProductionsGenres.ToList());
 
             return Ok(response);
-        }
-
-        [HttpPost("genre")]
-        public IActionResult InsertGenre([FromBody] GenreDto genreDto)
-        {
-            var genre = new GenreModel
-            {
-                Name = genreDto.Name
-            };
-
-
-            _catalogContext.Genres.Add(genre);
-            _catalogContext.SaveChanges();
-
-            return Ok(genreDto);
         }
 
         [HttpPut("production/id/{id}")]
@@ -103,17 +80,8 @@ namespace oc_catalog_audiovisuals_productions_backend.Controllers
                 return NotFound();
 
             var genres = _catalogContext.ProductionsGenres.Where(p => p.ProductionId == foundProduction.Id).ToList();
-            
-            ProductionResponseDto response = new ProductionResponseDto
-            {
-                Id = foundProduction.Id,
-                Name = foundProduction.Name,
-                AlternativeName = foundProduction.AlternativeName,
-                Description = foundProduction.Description,
-                ReleasedYear = foundProduction.ReleasedYear,
-                GenresIds = genres.Select(g => g.GenreId).ToList()
 
-            };
+            var response = ConvertoToProductionResponse(foundProduction, genres);
 
             return Ok(response);
         }
@@ -121,12 +89,18 @@ namespace oc_catalog_audiovisuals_productions_backend.Controllers
         [HttpGet("production/name/{name}")]
         public IActionResult GetProductionByName(string name)
         {
-            var foundProductions = _catalogContext.Productions.Where(x => x.Name.Contains(name));
+            var foundProductions = _catalogContext.Productions.Where(x => x.Name.Contains(name)).ToList();
 
             if (foundProductions == null)
                 return NotFound();
 
-            return Ok(foundProductions);
+            var genres = _catalogContext.ProductionsGenres.Where(pg =>
+                foundProductions.Select(p => p.Id).Contains(pg.ProductionId)
+            ).ToList();
+
+            var response = ConvertoToProductionResponse(foundProductions, genres);
+
+            return Ok(response);
         }
 
         [HttpGet("production/year/{year}")]
@@ -148,7 +122,7 @@ namespace oc_catalog_audiovisuals_productions_backend.Controllers
             if (foundGenre == null)
                 return NotFound("Genre not found!");
 
-            List<int> productionGenres = _catalogContext.ProductionsGenres
+            var productionGenres = _catalogContext.ProductionsGenres
                 .Where(pg => pg.GenreId == foundGenre.Id)
                 .Select(pg => pg.ProductionId)
                 .ToList();
@@ -156,12 +130,89 @@ namespace oc_catalog_audiovisuals_productions_backend.Controllers
             if (productionGenres == null)
                 return NotFound("No productions found!");
 
-            var foundProduction = _catalogContext.Productions.Where(p => productionGenres.Contains(p.Id));
+            var foundProduction = _catalogContext.Productions
+                .Where(p => productionGenres.Contains(p.Id));
 
             if (foundProduction == null)
                 return NotFound();
 
+            List<ProductionResponseDto> response = new List<ProductionResponseDto>();
+
+            foreach (var production in foundProduction)
+            {
+                response.Add(new ProductionResponseDto
+                {
+                    Id = production.Id,
+                    Name = production.Name,
+                    AlternativeName = production.AlternativeName,
+                    Description = production.Description,
+                    GenresIds = productionGenres,
+                    ReleasedYear = production.ReleasedYear
+                });
+            }
+
             return Ok(foundProduction);
         }
+        
+        [HttpPost("genre")]
+        public IActionResult InsertGenre([FromBody] GenreDto genreDto)
+        {
+            var genre = new GenreModel
+            {
+                Name = genreDto.Name
+            };
+
+
+            _catalogContext.Genres.Add(genre);
+            _catalogContext.SaveChanges();
+
+            return Ok(genreDto);
+        }
+
+        [HttpGet("genre")]
+        public IActionResult GetGenreById(int id)
+        {
+            var foundGenre = _catalogContext.Genres.Find(id);
+
+            if(foundGenre == null) return NotFound();
+
+            return Ok(foundGenre);
+        }
+
+        private ProductionResponseDto ConvertoToProductionResponse(ProductionModel production, List<ProductionGenreModel> genres)
+        {
+            ProductionResponseDto response = new ProductionResponseDto
+            {
+                Id = production.Id,
+                Name = production.Name,
+                AlternativeName = production.AlternativeName,
+                Description = production.Description,
+                ReleasedYear = production.ReleasedYear,
+                GenresIds = genres.Select(g => g.GenreId).ToList()
+            };
+
+            return response;
+        }
+
+        private List<ProductionResponseDto> ConvertoToProductionResponse(List<ProductionModel> productions, List<ProductionGenreModel> genres)
+        {
+            List<ProductionResponseDto> responses = new List<ProductionResponseDto>();
+
+            foreach(var production in productions)
+            {
+                responses.Add(new ProductionResponseDto
+                {
+                    Id = production.Id,
+                    Name = production.Name,
+                    AlternativeName = production.AlternativeName,
+                    Description = production.Description,
+                    ReleasedYear = production.ReleasedYear,
+                    GenresIds = genres.Select(g => g.GenreId).ToList()
+                });
+            }
+
+            return responses;
+        }
+
     }
 }

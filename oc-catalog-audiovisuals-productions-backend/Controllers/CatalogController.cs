@@ -18,7 +18,7 @@ namespace oc_catalog_audiovisuals_productions_backend.Controllers
             _catalogContext = catalogContext;
         }
 
-        [HttpPost]
+        [HttpPost("production")]
         public IActionResult InsertProduction(ProductionDto productionDto)
         {
             var production = new ProductionModel
@@ -52,7 +52,22 @@ namespace oc_catalog_audiovisuals_productions_backend.Controllers
             return Ok(response);
         }
 
-        [HttpPut("id/{id}")]
+        [HttpPost("genre")]
+        public IActionResult InsertGenre([FromBody] GenreDto genreDto)
+        {
+            var genre = new GenreModel
+            {
+                Name = genreDto.Name
+            };
+
+
+            _catalogContext.Genres.Add(genre);
+            _catalogContext.SaveChanges();
+
+            return Ok(genreDto);
+        }
+
+        [HttpPut("production/id/{id}")]
         public IActionResult EditProduction(int id)
         {
             ProductionModel foundProduction = _catalogContext.Productions.Find(id);
@@ -65,7 +80,7 @@ namespace oc_catalog_audiovisuals_productions_backend.Controllers
             return Ok(foundProduction);
         }
 
-        [HttpDelete("id/{id}")]
+        [HttpDelete("production/id/{id}")]
         public IActionResult DeleteProduction(int id)
         {
             ProductionModel foundProduction = _catalogContext.Productions.Find(id);
@@ -79,7 +94,7 @@ namespace oc_catalog_audiovisuals_productions_backend.Controllers
             return NoContent();
         }
 
-        [HttpGet("id/{id}")]
+        [HttpGet("production/id/{id}")]
         public IActionResult GetProductionById(int id)
         {
             var foundProduction = _catalogContext.Productions.FirstOrDefault(x => x.Id == id);
@@ -103,7 +118,7 @@ namespace oc_catalog_audiovisuals_productions_backend.Controllers
             return Ok(response);
         }
 
-        [HttpGet("name/{name}")]
+        [HttpGet("production/name/{name}")]
         public IActionResult GetProductionByName(string name)
         {
             var foundProductions = _catalogContext.Productions.Where(x => x.Name.Contains(name));
@@ -114,7 +129,7 @@ namespace oc_catalog_audiovisuals_productions_backend.Controllers
             return Ok(foundProductions);
         }
 
-        [HttpGet("year/{year}")]
+        [HttpGet("production/year/{year}")]
         public IActionResult GetProductionByYear(int year)
         {
             var foundProductions = _catalogContext.Productions.Where(x => x.ReleasedYear == year);
@@ -125,16 +140,28 @@ namespace oc_catalog_audiovisuals_productions_backend.Controllers
             return Ok(foundProductions);
         }
 
-        [HttpGet("genre/{genre}")]
+        [HttpGet("production/genre/{genre}")]
         public IActionResult GetProductionByGenre(string genre)
         {
-            //var foundProduction = _catalogContext.Productions.Where(x => x.Genre.ToString() == genre);
+            var foundGenre = _catalogContext.Genres.FirstOrDefault(g => g.Name.ToLower() == genre.ToLower());
 
-            //if (foundProduction == null)
-            //    return NotFound();
+            if (foundGenre == null)
+                return NotFound("Genre not found!");
 
-            //return Ok(foundProduction);
-            return null;
+            List<int> productionGenres = _catalogContext.ProductionsGenres
+                .Where(pg => pg.GenreId == foundGenre.Id)
+                .Select(pg => pg.ProductionId)
+                .ToList();
+
+            if (productionGenres == null)
+                return NotFound("No productions found!");
+
+            var foundProduction = _catalogContext.Productions.Where(p => productionGenres.Contains(p.Id));
+
+            if (foundProduction == null)
+                return NotFound();
+
+            return Ok(foundProduction);
         }
     }
 }
